@@ -1,0 +1,1 @@
+from .StockPredictor import StockPredictorApp
