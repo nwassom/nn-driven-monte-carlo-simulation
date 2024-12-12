@@ -10,17 +10,22 @@ def predict_stock_price(ticker, time_period):
     # Fetch and preprocess data
     data = fetch_stock_data(ticker)
 
-    # Train and predict using the NN model
     model, scaler = NN_model(data)
 
     # Prepare data for prediction
-    last_data = data[-time_period:].values.reshape(1, time_period, data.shape[1])
+    last_data = data[-time_period:].values
 
-    print("Shape of last_data:", last_data.shape)
-    print("Expected input shape:", model.input_shape)
+    # Determine the input shape expected by the model
+    input_shape = model.input_shape[1:]  # Exclude the batch dimension
+
+    # Reshape the data to match the expected input shape
+    last_data_reshaped = last_data.reshape(1, -1, input_shape[1])
 
     # Predict the future price
-    predicted_price = model.predict(last_data)
+    predicted_price = model.predict(last_data_reshaped)
+
+    print(f"PP: {predicted_price}")
+    print(f"Scaler: {scaler}")
     predicted_price = scaler.inverse_transform(predicted_price)
 
     # Display the result

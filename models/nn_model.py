@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.callbacks import EarlyStopping
 
@@ -11,7 +11,7 @@ def NN_model(data):
     data['MA_50'] = data['Close'].rolling(window=50).mean()
 
     # Handle missing values (optional, if necessary)
-    # data.fillna(method='ffill', inplace=True)
+    data.fillna(method='ffill', inplace=True)
 
     # Normalize the data
     scaler = MinMaxScaler(feature_range=(0, 1))
@@ -44,8 +44,12 @@ def NN_model(data):
     X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
     # Create the LSTM model
+
+    input_shape = (X_train.shape[1], X_train.shape[2])
+
     model = Sequential()
-    model.add(LSTM(units=50, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2])))
+    model.add(Input(shape=input_shape))
+    model.add(LSTM(units=50, return_sequences=True))
     model.add(Dropout(0.2))
     model.add(LSTM(units=50))
     model.add(Dropout(0.2))
