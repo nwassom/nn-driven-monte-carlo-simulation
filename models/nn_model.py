@@ -6,12 +6,7 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
 from sklearn.preprocessing import StandardScaler 
 from tensorflow.keras.callbacks import EarlyStopping
 
-from features import get_features
-
-def NN_model(data):
-
-    scaled_data, scaler = get_features(data)
-    features_count = scaled_data.shape[1]
+def NN_model(scaled_data, scaler):
 
     # Create sequences of data
     def create_sequences(data, seq_length):
@@ -66,4 +61,4 @@ def NN_model(data):
     loss = model.evaluate(X_test, y_test)
     print(f"Test Loss: {loss}")
 
-    return model, scaler, features_count
+    return model

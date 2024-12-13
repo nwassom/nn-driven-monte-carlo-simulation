@@ -49,7 +49,7 @@ def prepare_features(data):
     data.interpolate(method='linear', inplace=True)
 
     data.fillna(method='bfill', inplace=True)
-    
+
     # Drop rows with NaN values (force cleanup)
     data.dropna(inplace=True)
 
@@ -63,10 +63,10 @@ def prepare_features(data):
     scaler = StandardScaler()
     scaled_data = scaler.fit_transform(data)
 
-    scaled_data_df = pd.DataFrame(scaled_data, columns=features)
+   ## scaled_data_df = pd.DataFrame(scaled_data, columns=features)
 
     # Save to CSV
-    scaled_data_df.to_csv('scaled_data.csv', index=False)
+ ##   scaled_data_df.to_csv('scaled_data.csv', index=False)
 
     return scaled_data, scaler
 

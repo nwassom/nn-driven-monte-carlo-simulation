@@ -5,20 +5,21 @@ from sklearn.preprocessing import MinMaxScaler
 
 from models.nn_model import NN_model
 from utils.data_fetch import fetch_stock_data
+from features import get_features
 
 def predict_stock_price(ticker, time_period):
-    data = fetch_stock_data(ticker)
+    raw_data = fetch_stock_data(ticker)
 
-    model, scaler, features_count = NN_model(data)
+    engineered_data, scaler = get_features(raw_data)
+    features_count = engineered_data.shape[1]
+
+    model = NN_model(engineered_data, scaler)
 
     # Take the last 'time_period' rows from the selected features
-    last_data = data[-time_period:]
+    last_data = engineered_data[-time_period:]
 
     # Debugging logs to verify the data
     print(f"Shape of last_data (before reshape): {last_data.shape}")
-
-    # Convert the DataFrame to a NumPy array
-    last_data = last_data.values  # Convert to NumPy array
 
     # Check if last_data has enough values to reshape into (1, timesteps, features_count)
     expected_shape = time_period * features_count  # This should be time_period * features_count
@@ -40,13 +41,18 @@ def predict_stock_price(ticker, time_period):
     # Reshape predicted_price before inverse_transform
     predicted_price = predicted_price.reshape(predicted_price.shape[0], -1)  # (n_samples, n_features)
 
+    padded_prediction = np.zeros((1, scaler.n_features_in_))
+    padded_prediction[:, 0] = predicted_price[:, 0]
+
+    inverse_transformed = scaler.inverse_transform(padded_prediction)
     # Reverse the scaling transformation
-    predicted_price = scaler.inverse_transform(predicted_price)
+
+    predicted_price = inverse_transformed[:, 0]
 
     # Print the final predicted price after inverse scaling
     print(f"Predicted price (after inverse scaling): {predicted_price}")
 
-    return predicted_price[0][0]  # Return the predicted price (first element)
+    return predicted_price[0] # Return the predicted price (first element)
 
 
 # Create the main window
@@ -78,7 +84,7 @@ class StockPredictorApp(tk.Tk):
     def predict(self):
         ticker = self.ticker_entry.get()
         time_period = int(self.time_period_entry.get())
-        predictedprice = predict_stock_price(ticker, time_period)
+        predicted_price = predict_stock_price(ticker, time_period)
         self.result_label.config(text=f"Predicted price: {predicted_price}")
 
 if __name__ == "__main__":
