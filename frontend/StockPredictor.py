@@ -1,14 +1,18 @@
 import tkinter as tk
 from tkinter import ttk
 import numpy as np
+import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
+
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
+import mplfinance as mpf 
 
 from models.nn_model import NN_model
 from utils.data_fetch import fetch_stock_data
 from features import get_features
 
-def predict_stock_price(ticker, time_period):
-    raw_data = fetch_stock_data(ticker)
+def predict_stock_price(raw_data, time_period):
 
     engineered_data, scaler = get_features(raw_data)
     features_count = engineered_data.shape[1]
@@ -84,8 +88,52 @@ class StockPredictorApp(tk.Tk):
     def predict(self):
         ticker = self.ticker_entry.get()
         time_period = int(self.time_period_entry.get())
-        predicted_price = predict_stock_price(ticker, time_period)
+
+        raw_data = fetch_stock_data(ticker)
+
+        predicted_price = predict_stock_price(raw_data, time_period)
         self.result_label.config(text=f"Predicted price: {predicted_price}")
+
+        self.visualize_stock_data(raw_data, predicted_price)
+
+    def visualize_stock_data(self, raw_data, predicted_price):
+        # Prepare historical data
+        historical_data = raw_data.copy()
+
+        # Add prediction as a new row
+        last_date = historical_data.index[-1]
+        new_date = last_date + pd.Timedelta(days=1)
+        prediction_row = {
+            "Open": predicted_price,
+            "High": predicted_price * 1.01,
+            "Low": predicted_price * 0.99,
+            "Close": predicted_price,
+            "Volume": 0,
+        }
+        historical_data.loc[new_date] = prediction_row
+
+        # Separate historical and predicted data for plotting
+        historical_chart = mpf.make_addplot(historical_data.iloc[:-1]["Close"], color='blue')
+        prediction_chart = mpf.make_addplot(historical_data.iloc[-1:], color='red')
+
+        # Create a figure
+        fig, ax = mpf.plot(
+            historical_data,
+            type="candle",
+            addplot=[historical_chart, prediction_chart],
+            returnfig=True,
+            style="yahoo",
+        )
+
+        # Clear the previous plot
+        for widget in self.plot_frame.winfo_children():
+            widget.destroy()
+
+        # Embed the Matplotlib figure in Tkinter
+        canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack()
+
 
 if __name__ == "__main__":
     app = StockPredictorApp()
