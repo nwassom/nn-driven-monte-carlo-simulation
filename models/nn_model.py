@@ -8,6 +8,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 
 def NN_model(scaled_data, scaler):
 
+    print(tf.test.is_built_with_cuda())
     # Create sequences of data
     def create_sequences(data, seq_length):
         X, y = [], []
@@ -54,7 +55,7 @@ def NN_model(scaled_data, scaler):
     early_stop = EarlyStopping(monitor='val_loss', patience=10)
 
     # Train the model
-    model.fit(X_train, y_train, epochs=100, batch_size=32, 
+    model.fit(X_train, y_train, epochs=100, batch_size=128, 
              validation_data=(X_val, y_val), callbacks=[early_stop]) 
 
     # Evaluate the model

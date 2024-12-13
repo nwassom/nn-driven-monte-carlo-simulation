@@ -1,15 +1,14 @@
 name: nn-mc-sim
 channels:
+  - conda-forge
   - defaults
 dependencies:
   - bzip2=1.0.8
   - ca-certificates=2024.11.26
   - libffi=3.4.4
-  - ncurses=6.4
   - openssl=3.0.15
   - pip=24.2
   - python=3.10.16
-  - readline=8.2
   - setuptools=75.1.0
   - sqlite=3.45.3
   - tk=8.6.14
@@ -90,7 +89,6 @@ dependencies:
       - tensorboard==2.16.2
       - tensorboard-data-server==0.7.2
       - tensorflow==2.16.2
-      - tensorflow-io-gcs-filesystem==0.37.1
       - termcolor==2.5.0
       - threadpoolctl==3.5.0
       - toml==0.10.2

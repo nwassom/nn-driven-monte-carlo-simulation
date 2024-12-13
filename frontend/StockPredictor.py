@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -63,6 +64,7 @@ def predict_stock_price(raw_data, time_period):
 class StockPredictorApp(tk.Tk):
     def __init__(self):
         super().__init__()
+        self.tk.call('tk', 'scaling', 1.0)
         self.title("Stock Price Predictor")
 
         # Create input fields
@@ -96,43 +98,70 @@ class StockPredictorApp(tk.Tk):
 
         self.visualize_stock_data(raw_data, predicted_price)
 
+    
     def visualize_stock_data(self, raw_data, predicted_price):
-        # Prepare historical data
-        historical_data = raw_data.copy()
+        """
+        Visualizes the closing price of the stock data with the predicted price highlighted.
 
-        # Add prediction as a new row
-        last_date = historical_data.index[-1]
-        new_date = last_date + pd.Timedelta(days=1)
-        prediction_row = {
-            "Open": predicted_price,
-            "High": predicted_price * 1.01,
-            "Low": predicted_price * 0.99,
-            "Close": predicted_price,
-            "Volume": 0,
-        }
-        historical_data.loc[new_date] = prediction_row
+        Args:
+            raw_data: A pandas DataFrame containing the stock data.
+            predicted_price: The predicted price for the next time period.
+        """
 
-        # Separate historical and predicted data for plotting
-        historical_chart = mpf.make_addplot(historical_data.iloc[:-1]["Close"], color='blue')
-        prediction_chart = mpf.make_addplot(historical_data.iloc[-1:], color='red')
+        # Extract closing prices
+        closing_prices = raw_data['Close']
 
-        # Create a figure
-        fig, ax = mpf.plot(
-            historical_data,
-            type="candle",
-            addplot=[historical_chart, prediction_chart],
-            returnfig=True,
-            style="yahoo",
-        )
+        # Create the main figure and plot area
+        fig, ax = plt.subplots(figsize=(12, 6), dpi=100)
 
-        # Clear the previous plot
-        for widget in self.plot_frame.winfo_children():
-            widget.destroy()
+        # Plot the closing prices with a blue line
+        line, = ax.plot(closing_prices.index, closing_prices, label='Closing Price', color='blue')
 
-        # Embed the Matplotlib figure in Tkinter
-        canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
+        # Create a vertical line at the last data point with the predicted price
+        x_last = closing_prices.index[-1]
+        ax.axvline(x=x_last, color='green', linestyle='dashed', label='Prediction')
+
+        # Plot the predicted price as a green dot
+        ax.scatter(x_last, predicted_price, marker='o', color='green', label='Predicted Price')
+
+        # Add labels and title
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Closing Price')
+        ax.set_title('Stock Price Visualization')
+
+        # Add legend
+        ax.legend()
+
+        # Use Seaborn for stylistic enhancements (optional)
+        sns.despine(ax=ax)  # Remove grid lines and top/right spines
+
+        # Enable zooming and panning
+        fig.canvas.mpl_connect('scroll_event', lambda event: ax.set_xlim(ax.get_xlim()[0] + event.step * 0.1, ax.get_xlim()[1] + event.step * 0.1))
+
+        # Create an annotation to display date and price
+        annotation = ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
+                                bbox=dict(boxstyle="round", fc="w"),
+                                arrowprops=dict(arrowstyle="->"))
+        annotation.set_visible(False)
+
+        def on_motion(event):
+            if event.inaxes:
+                x, y = event.xdata, event.ydata
+                annotation.xy = (x, y)
+                annotation.set_text(f"Date: {x:.2f}\nPrice: {y:.2f}")
+                annotation.set_visible(True)
+                fig.canvas.draw_idle()
+            else:
+                if annotation.get_visible():
+                    annotation.set_visible(False)
+                    fig.canvas.draw_idle()
+
+        fig.canvas.mpl_connect("motion_notify_event", on_motion)
+
+        # Display the plot using tkinter canvas
+        canvas = FigureCanvasTkAgg(fig, master=self)
         canvas.draw()
-        canvas.get_tk_widget().pack()
+        canvas.get_tk_widget().grid(row=4, columnspan=2)  # Place the canvas on the grid
 
 
 if __name__ == "__main__":
