@@ -7,28 +7,47 @@ from models.nn_model import NN_model
 from utils.data_fetch import fetch_stock_data
 
 def predict_stock_price(ticker, time_period):
-    
     data = fetch_stock_data(ticker)
 
-    model, scaler = NN_model(data)
+    model, scaler, features_count = NN_model(data)
 
-    last_data = data[-time_period:].values
-    input_shape = model.input_shape[1:]
-    last_data_reshaped = last_data.reshape(1, -1, input_shape[1])
+    # Take the last 'time_period' rows from the selected features
+    last_data = data[-time_period:]
 
+    # Debugging logs to verify the data
+    print(f"Shape of last_data (before reshape): {last_data.shape}")
+
+    # Convert the DataFrame to a NumPy array
+    last_data = last_data.values  # Convert to NumPy array
+
+    # Check if last_data has enough values to reshape into (1, timesteps, features_count)
+    expected_shape = time_period * features_count  # This should be time_period * features_count
+    if last_data.size != expected_shape:
+        raise ValueError(f"Last data size ({last_data.size}) does not match the expected size ({expected_shape}) "
+                         f"for {time_period} timesteps and {features_count} features.\n"
+                         f"Last_data shape: {last_data.shape}, Time Period: {time_period}")
+
+    # Reshape the data for LSTM model input
+    timesteps = time_period  # Use the exact number of timesteps you have
+    last_data_reshaped = last_data.reshape(1, timesteps, features_count)  # Reshape into (1, timesteps, features_count)
+
+    # Predict the stock price using the model
     predicted_price = model.predict(last_data_reshaped)
 
-    print(f"PP: {predicted_price}")
-    print(f"Scaler: {scaler}")
+    # Print predicted price for debugging
+    print(f"Predicted price (before inverse scaling): {predicted_price}")
 
-    # Key Change: Reshape predicted_price before inverse_transform
-    predicted_price = predicted_price.reshape(predicted_price.shape[0], -1) # Reshape to (n_samples, n_features)
+    # Reshape predicted_price before inverse_transform
+    predicted_price = predicted_price.reshape(predicted_price.shape[0], -1)  # (n_samples, n_features)
 
+    # Reverse the scaling transformation
     predicted_price = scaler.inverse_transform(predicted_price)
 
-    print(predicted_price)
-    
-    return predicted_price[0][0]
+    # Print the final predicted price after inverse scaling
+    print(f"Predicted price (after inverse scaling): {predicted_price}")
+
+    return predicted_price[0][0]  # Return the predicted price (first element)
+
 
 # Create the main window
 class StockPredictorApp(tk.Tk):
