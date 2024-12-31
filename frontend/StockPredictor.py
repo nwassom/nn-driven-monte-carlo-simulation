@@ -13,6 +13,12 @@ from models.nn_model import NN_model
 from utils.data_fetch import fetch_stock_data
 from features import get_features
 
+'''
+    1. Need to reorganize the architecture of this app and files.
+
+    2. Need to implement a way to test the accuracy of prediction using last days stock as the true value vs our prediction
+
+'''
 def predict_stock_price(raw_data, time_period):
 
     engineered_data, scaler = get_features(raw_data)
@@ -67,11 +73,15 @@ class StockPredictorApp(tk.Tk):
         self.tk.call('tk', 'scaling', 1.0)
         self.title("Stock Price Predictor")
 
+        isChecked = tk.IntVar()
+
         # Create input fields
         ticker_label = tk.Label(self, text="Stock Ticker:")
         self.ticker_entry = tk.Entry(self)
         time_period_label = tk.Label(self, text="Time Period (days):")
         self.time_period_entry = tk.Entry(self)
+        check_label = tk.Label(self, text="Test Accuracy")
+        self.test_accuracy_check = tk.Checkbutton(self, text="Enable accuracy check", variable=isChecked, onvalue=1, offvalue=0)
 
         # Create a button to trigger prediction
         predict_button = tk.Button(self, text="Predict", command=self.predict)
@@ -86,6 +96,8 @@ class StockPredictorApp(tk.Tk):
         self.time_period_entry.grid(row=1, column=1)
         predict_button.grid(row=2, columnspan=2)
         self.result_label.grid(row=3, columnspan=2)
+        check_label.grid(row=3, columnspan= 2)
+        self.test_accuracy_check.grid(row=3, column = 1)
 
     def predict(self):
         ticker = self.ticker_entry.get()
